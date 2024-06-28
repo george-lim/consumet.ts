@@ -20,17 +20,19 @@ import { GogoCDN, StreamSB, StreamWish } from '../../extractors';
 
 class Gogoanime extends AnimeParser {
   override readonly name = 'Gogoanime';
-  protected override baseUrl = 'https://anitaku.so';
+  protected override baseUrl = 'https://anitaku.pe';
   protected override logo =
     'https://play-lh.googleusercontent.com/MaGEiAEhNHAJXcXKzqTNgxqRmhuKB1rCUgb15UrN_mWUNRnLpO5T1qja64oRasO7mn0';
   protected override classPath = 'ANIME.Gogoanime';
   private readonly ajaxUrl = 'https://ajax.gogocdn.net/ajax';
+  private isUsingProxy = false;
 
 
   constructor(
     customBaseURL?: string,
     proxy?: ProxyConfig,
-    adapter?: AxiosAdapter
+    adapter?: AxiosAdapter,
+    isUsingProxy?: boolean,
   ) {
     super(...arguments);
     this.baseUrl = customBaseURL ? `https://${customBaseURL}` : this.baseUrl;
@@ -41,6 +43,9 @@ class Gogoanime extends AnimeParser {
     if (adapter) {
       // Initialize adapter if provided
       this.setAxiosAdapter(adapter);
+    }
+    if (isUsingProxy !== undefined) {
+      this.isUsingProxy = isUsingProxy;
     }
   }
 
@@ -196,7 +201,7 @@ class Gogoanime extends AnimeParser {
         case StreamingServers.GogoCDN:
           return {
             headers: { Referer: serverUrl.href },
-            sources: await new GogoCDN(this.proxyConfig, this.adapter).extract(serverUrl),
+            sources: await new GogoCDN(this.proxyConfig, this.adapter, this.isUsingProxy).extract(serverUrl),
             download: `https://${serverUrl.host}/download${serverUrl.search}`,
           };
         case StreamingServers.StreamSB:
@@ -220,7 +225,7 @@ class Gogoanime extends AnimeParser {
         default:
           return {
             headers: { Referer: serverUrl.href },
-            sources: await new GogoCDN(this.proxyConfig, this.adapter).extract(serverUrl),
+            sources: await new GogoCDN(this.proxyConfig, this.adapter, this.isUsingProxy).extract(serverUrl),
             download: `https://${serverUrl.host}/download${serverUrl.search}`,
           };
       }

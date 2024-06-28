@@ -3,6 +3,7 @@ import CryptoJS from 'crypto-js';
 
 import { VideoExtractor, IVideo, ProxyConfig } from '../models';
 import { USER_AGENT } from '../utils';
+import { AxiosAdapter } from 'axios';
 
 class GogoCDN extends VideoExtractor {
   protected override serverName = 'goload';
@@ -15,23 +16,37 @@ class GogoCDN extends VideoExtractor {
   };
 
   private referer: string = '';
+  private isUsingProxy = false;
+
+  constructor(proxyConfig?: ProxyConfig, adapter?: AxiosAdapter, isUsingProxy?: boolean) {
+    super(proxyConfig, adapter);
+
+    if (isUsingProxy !== undefined) {
+      this.isUsingProxy = isUsingProxy;
+    }
+  }
 
   override extract = async (videoUrl: URL): Promise<IVideo[]> => {
     this.referer = videoUrl.href;
 
-    const res = await this.client.get(videoUrl.href);
+    let href = this.isUsingProxy
+      ? `https://www.cors-proxy.cf/target/${videoUrl.href.replace(/http(s*):\/\//, '')}`
+      : videoUrl.href;
+
+    const res = await this.client.get(href);
     const $ = load(res.data);
 
     const encyptedParams = await this.generateEncryptedAjaxParams($, videoUrl.searchParams.get('id') ?? '');
 
-    const encryptedData = await this.client.get(
-      `${videoUrl.protocol}//${videoUrl.hostname}/encrypt-ajax.php?${encyptedParams}`,
-      {
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-      }
-    );
+    href = this.isUsingProxy
+      ? `https://www.cors-proxy.cf/target/${videoUrl.host}/encrypt-ajax.php?${encyptedParams}`
+      : `${videoUrl.protocol}//${videoUrl.hostname}/encrypt-ajax.php?${encyptedParams}`;
+
+    const encryptedData = await this.client.get(href, {
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+    });
 
     const decryptedData = await this.decryptAjaxData(encryptedData.data.data);
     if (!decryptedData.source) throw new Error('No source found. Try a different server.');
