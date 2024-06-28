@@ -6,7 +6,8 @@ declare class Gogoanime extends AnimeParser {
     protected logo: string;
     protected classPath: string;
     private readonly ajaxUrl;
-    constructor(customBaseURL?: string, proxy?: ProxyConfig, adapter?: AxiosAdapter);
+    private isUsingProxy;
+    constructor(customBaseURL?: string, proxy?: ProxyConfig, adapter?: AxiosAdapter, isUsingProxy?: boolean);
     /**
      *
      * @param query search query string

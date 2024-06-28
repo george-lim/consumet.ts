@@ -8,8 +8,8 @@ const crypto_js_1 = __importDefault(require("crypto-js"));
 const models_1 = require("../models");
 const utils_1 = require("../utils");
 class GogoCDN extends models_1.VideoExtractor {
-    constructor() {
-        super(...arguments);
+    constructor(proxyConfig, adapter, isUsingProxy) {
+        super(proxyConfig, adapter);
         this.serverName = 'goload';
         this.sources = [];
         this.keys = {
@@ -18,13 +18,20 @@ class GogoCDN extends models_1.VideoExtractor {
             iv: crypto_js_1.default.enc.Utf8.parse('3134003223491201'),
         };
         this.referer = '';
+        this.isUsingProxy = false;
         this.extract = async (videoUrl) => {
             var _a;
             this.referer = videoUrl.href;
-            const res = await this.client.get(videoUrl.href);
+            let href = this.isUsingProxy
+                ? `https://www.cors-proxy.cf/target/${videoUrl.href.replace(/http(s*):\/\//, '')}`
+                : videoUrl.href;
+            const res = await this.client.get(href);
             const $ = (0, cheerio_1.load)(res.data);
             const encyptedParams = await this.generateEncryptedAjaxParams($, (_a = videoUrl.searchParams.get('id')) !== null && _a !== void 0 ? _a : '');
-            const encryptedData = await this.client.get(`${videoUrl.protocol}//${videoUrl.hostname}/encrypt-ajax.php?${encyptedParams}`, {
+            href = this.isUsingProxy
+                ? `https://www.cors-proxy.cf/target/${videoUrl.host}/encrypt-ajax.php?${encyptedParams}`
+                : `${videoUrl.protocol}//${videoUrl.hostname}/encrypt-ajax.php?${encyptedParams}`;
+            const encryptedData = await this.client.get(href, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
@@ -119,6 +126,9 @@ class GogoCDN extends models_1.VideoExtractor {
             }));
             return JSON.parse(decryptedData);
         };
+        if (isUsingProxy !== undefined) {
+            this.isUsingProxy = isUsingProxy;
+        }
     }
 }
 exports.default = GogoCDN;

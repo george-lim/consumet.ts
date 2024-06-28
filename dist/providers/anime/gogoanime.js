@@ -5,13 +5,14 @@ const models_1 = require("../../models");
 const utils_1 = require("../../utils");
 const extractors_1 = require("../../extractors");
 class Gogoanime extends models_1.AnimeParser {
-    constructor(customBaseURL, proxy, adapter) {
+    constructor(customBaseURL, proxy, adapter, isUsingProxy) {
         super(...arguments);
         this.name = 'Gogoanime';
-        this.baseUrl = 'https://anitaku.so';
+        this.baseUrl = 'https://anitaku.pe';
         this.logo = 'https://play-lh.googleusercontent.com/MaGEiAEhNHAJXcXKzqTNgxqRmhuKB1rCUgb15UrN_mWUNRnLpO5T1qja64oRasO7mn0';
         this.classPath = 'ANIME.Gogoanime';
         this.ajaxUrl = 'https://ajax.gogocdn.net/ajax';
+        this.isUsingProxy = false;
         /**
          *
          * @param query search query string
@@ -141,7 +142,7 @@ class Gogoanime extends models_1.AnimeParser {
                     case models_1.StreamingServers.GogoCDN:
                         return {
                             headers: { Referer: serverUrl.href },
-                            sources: await new extractors_1.GogoCDN(this.proxyConfig, this.adapter).extract(serverUrl),
+                            sources: await new extractors_1.GogoCDN(this.proxyConfig, this.adapter, this.isUsingProxy).extract(serverUrl),
                             download: `https://${serverUrl.host}/download${serverUrl.search}`,
                         };
                     case models_1.StreamingServers.StreamSB:
@@ -165,7 +166,7 @@ class Gogoanime extends models_1.AnimeParser {
                     default:
                         return {
                             headers: { Referer: serverUrl.href },
-                            sources: await new extractors_1.GogoCDN(this.proxyConfig, this.adapter).extract(serverUrl),
+                            sources: await new extractors_1.GogoCDN(this.proxyConfig, this.adapter, this.isUsingProxy).extract(serverUrl),
                             download: `https://${serverUrl.host}/download${serverUrl.search}`,
                         };
                 }
@@ -489,6 +490,9 @@ class Gogoanime extends models_1.AnimeParser {
         if (adapter) {
             // Initialize adapter if provided
             this.setAxiosAdapter(adapter);
+        }
+        if (isUsingProxy !== undefined) {
+            this.isUsingProxy = isUsingProxy;
         }
     }
 }
